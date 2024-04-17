@@ -1,9 +1,6 @@
+import pandas as pd
+
 
 class AParser:
-
-
-    def __parse(self):
-        pass
-
-    def getParsedData(self):
+    def parse(self) -> pd.DataFrame:
         pass
