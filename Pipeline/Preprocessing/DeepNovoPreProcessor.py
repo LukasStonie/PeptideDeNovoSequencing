@@ -78,5 +78,8 @@ class DeepNovoPreProcessor:
 
 
 if __name__ == "__main__":
-    preprocessor = DeepNovoPreProcessor("/Users/lukas/University/Bachelor_Thesis/Project/PeptideDeNovoSequencing/Data/01640c_BD7-Thermo_SRM_Pool_52_01_01-3xHCD-1h-R2_deepnovo_conventions.mgf", "PEPTIDE")
-    preprocessor.process("/Users/lukas/University/Bachelor_Thesis/Project/PeptideDeNovoSequencing/Data/01640c_BD7-Thermo_SRM_Pool_52_01_01-3xHCD-1h-R2.mgf")
+    files = ['Pool_49/01640c_BA7-Thermo_SRM_Pool_49_01_01-3xHCD-1h-R2', 'Pool_52/01640c_BD7-Thermo_SRM_Pool_52_01_01-3xHCD-1h-R2','Pool_60/01640c_BD8-Thermo_SRM_Pool_60_01_01-3xHCD-1h-R2']
+    for file in files:
+        file = f"../../Data/Datasets/{file}"
+        preprocessor = DeepNovoPreProcessor(file+'_deepnovo.mgf', "PEPTIDE")
+        preprocessor.process(file+'.mgf')

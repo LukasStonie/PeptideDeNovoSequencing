@@ -3,7 +3,6 @@ from Bio.Align import substitution_matrices
 
 from Pipeline.Scoring.AScore import AScore
 
-
 class SequenceSimilarity(AScore):
     def __init__(self, substitution_matrix:str = 'BLOSUM62', alignment_mode:str = 'global'):
         self.substitution_matrix = substitution_matrix

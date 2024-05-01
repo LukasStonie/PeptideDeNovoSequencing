@@ -1,5 +1,8 @@
-from Pipeline.Scoring.AScore import AScore
 from Levenshtein import distance
+
+from Pipeline.Scoring.AScore import AScore
+
+
 class LevenshteinDistance(AScore):
     def __init__(self):
         pass

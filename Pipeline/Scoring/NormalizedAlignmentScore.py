@@ -2,7 +2,6 @@ from Bio.Align import substitution_matrices, PairwiseAligner
 
 from Pipeline.Scoring.AScore import AScore
 
-
 class NormalizedAlignmentScore(AScore):
     def __init__(self, substitution_matrix:str = 'BLOSUM62', alignment_mode:str = 'global'):
         self.substitution_matrix = substitution_matrix
@@ -27,12 +26,13 @@ class NormalizedAlignmentScore(AScore):
         # get the first (best) alignment
         alignment = alignments[0]
         # return the alignment score
-        return alignment.score / len(alignment[0,:]) #if self.aligner.mode == 'global' else len(predicted))
+        return alignment.score / (len(alignment[0,:]) if self.aligner.mode == 'global' else len(predicted))
 
 
 if __name__ == "__main__":
     alignment = NormalizedAlignmentScore()
     print(alignment.getScore("ITHQGEVDSR", "LTHQEVDSR"))
-    print(alignment.getScore(predicted="YAMAWFQR", actual="VAMAMGSHPR"))
+    print(alignment.getScore(predicted="GSHP", actual="VAMAMGSHPR"))
     alignment = NormalizedAlignmentScore(alignment_mode='local')
-    print(alignment.getScore(actual="VAMAMGSHPR", predicted="YAMAWFQR"))
+    print(alignment.getScore(actual="VAMAMGSHPR", predicted="GSHL"))
+    print(alignment.getScore(actual="VAMAMGSHPR", predicted="QWTY"))

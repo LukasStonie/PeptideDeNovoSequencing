@@ -33,3 +33,5 @@ class AlignmentScore(AScore):
 if __name__ == "__main__":
     alignment = AlignmentScore()
     print(alignment.getScore("ITHQGEVDSR", "LTHQEVDSR"))
+    alignment = AlignmentScore(alignment_mode='local')
+    print(alignment.getScore(actual="VAMAMGSHPR", predicted="QWTY"))
