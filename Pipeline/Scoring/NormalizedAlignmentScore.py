@@ -32,7 +32,8 @@ class NormalizedAlignmentScore(AScore):
 if __name__ == "__main__":
     alignment = NormalizedAlignmentScore()
     print(alignment.getScore("ITHQGEVDSR", "LTHQEVDSR"))
-    print(alignment.getScore(predicted="GSHP", actual="VAMAMGSHPR"))
+    #print(alignment.getScore(predicted="GSHP", actual="VAMAMGSHPR"))
     alignment = NormalizedAlignmentScore(alignment_mode='local')
-    print(alignment.getScore(actual="VAMAMGSHPR", predicted="GSHL"))
-    print(alignment.getScore(actual="VAMAMGSHPR", predicted="QWTY"))
+    print(alignment.getScore("ITHQGEVDSR", "LTHQEVDSR"))
+    #print(alignment.getScore(actual="VAMAMGSHPR", predicted="GSHL"))
+    #print(alignment.getScore(actual="VAMAMGSHPR", predicted="QWTY"))

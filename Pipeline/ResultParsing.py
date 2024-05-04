@@ -65,13 +65,21 @@ if __name__ == "__main__":
         ('Pool_60', 'BD8')]
 
     for p in pools:
-        expected_pool_49 = pd.read_csv(
+
+        # parse deepnovo result and save to file
+        DeepNovoParser(f"../Data/AlgorithmResults/{p[0]}/DeepNovo/decode_output.tab").parse().to_csv(f"../Data/ParsingResults/{p[0]}/deepnovo_results_raw.tsv", sep='\t', index=None)
+        PEAKSParser(f"../Data/AlgorithmResults/{p[0]}/PEAKS/Sample 1.denovo.csv").parse().to_csv(f"../Data/ParsingResults/{p[0]}/peaks_results_raw.tsv", sep='\t', index=None)
+        DirecTagParser(f"../Data/AlgorithmResults/{p[0]}/DirecTag/Run_1/01640c_{p[1]}-Thermo_SRM_{p[0]}_01_01-3xHCD-1h-R2.tags", 25).parse().to_csv(f"../Data/ParsingResults/{p[0]}/direcTag_results_raw.tsv", sep='\t', index=None)
+        NovorParser(f"../Data/AlgorithmResults/{p[0]}/Novor/Run_1/01640c_{p[1]}-Thermo_SRM_{p[0]}_01_01-3xHCD-1h-R2.novor.csv", 20).parse().to_csv(f"../Data/ParsingResults/{p[0]}/novor_results_raw.tsv", sep='\t', index=None)
+
+
+        expected_pool = pd.read_csv(
             f"../Data/Datasets/{p[0]}/Thermo_SRM_{p[0]}_01_01_3xHCD-1h-R2-tryptic/msmsScans.txt",
             sep='\t')
         actualSequence_pool_df = pd.DataFrame(
-            {'Scan': expected_pool_49['Scan number'], 'Actual': expected_pool_49['Sequence']})
+            {'Scan': expected_pool['Scan number'], 'Actual': expected_pool['Sequence']})
 
-        # read peaks result
+       # read peaks result
         peaks_result = readPeaksResult(f"../Data/AlgorithmResults/{p[0]}/PEAKS/Sample 1.denovo.csv",
                                        actualSequence_pool_df)
         # write the result to a file
@@ -91,7 +99,7 @@ if __name__ == "__main__":
         # write the result to a file
         novor_result.to_csv(f'../Data/ParsingResults/{p[0]}/novor_results.tsv', sep='\t', index=None)
 
-        # read deepnovo result
+       # read deepnovo result
         deepnovo_result = readDeepNovoResult(f"../Data/AlgorithmResults/{p[0]}/DeepNovo/decode_output.tab",
                                              actualSequence_pool_df)
         # write the result to a file
