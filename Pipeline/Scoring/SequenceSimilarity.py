@@ -40,4 +40,4 @@ if __name__ == "__main__":
     print(similarity.getScore("ITHQGEVDSR","LTHQEPVDSR"))
     similarity = SequenceSimilarity(alignment_mode='local')
     print(similarity.getScore(actual="AFPSPQTLLEDPLR", predicted="PEKD"))
-    print(similarity.getScore(predicted="GSHL", actual="VAMAMGSHIR"))
+    print(similarity.getScore(predicted="PYGC", actual="SHTGEKPYGCNECGK"))

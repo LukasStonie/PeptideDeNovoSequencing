@@ -113,8 +113,8 @@ if __name__ == "__main__":
 
         print("Scoring ", p, " - DirecTag")
         # read directag
-        #directag_scored_df = processParsed(f"../Data/ParsingResults/{p}/direcTag_results.tsv", alignment_mode='global')
+        directag_scored_df = processParsed(f"../Data/ParsingResults/{p}/direcTag_results.tsv", alignment_mode='local')
         # save directag scores
-        #directag_scored_df.to_csv(f"../Data/ScoringResults/{p}/direcTag_scored.tsv", sep='\t', index=None)
+        directag_scored_df.to_csv(f"../Data/ScoringResults/{p}/direcTag_scored.tsv", sep='\t', index=None)
         # group by ID and average every column
-        # groupByIdAndAverage(directag_scored_df).to_csv(f"../Data/ScoringResults/{p}/direcTag_scored_grouped.tsv", sep='\t', index=None)
+        groupByIdAndAverage(directag_scored_df).to_csv(f"../Data/ScoringResults/{p}/direcTag_scored_grouped.tsv", sep='\t', index=None)
