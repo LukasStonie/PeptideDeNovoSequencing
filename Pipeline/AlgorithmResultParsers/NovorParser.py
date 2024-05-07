@@ -1,6 +1,8 @@
 from Pipeline.AlgorithmResultParsers.AParser import AParser
 import pandas as pd
 
+from Pipeline.AlgorithmResultParsers.IAverageAminoAcidScore import IAverageAminoAcidScore
+
 
 class NovorParser(AParser):
     def __init__(self, file: str, skipNLines: int):
@@ -11,9 +13,11 @@ class NovorParser(AParser):
         :param scanNumberCorrection: Number to be added to the scan number. Novor uses scan number 0 for all scans, so this number is used to correct it.
 
         """
-        self.file = file
+        super().__init__(file)
         self.skipNLines = skipNLines
         self.result = None
+
+
 
     @staticmethod
     def __cleanPeptideModifications(peptide: str) -> str:
@@ -32,10 +36,10 @@ class NovorParser(AParser):
         temp_df.columns = temp_df.columns.str.strip('# ')
         temp_df['id'] = temp_df['id'] - 1
         temp_df = temp_df.drop(
-            columns=['', 'RT', 'score', 'aaScore', 'ppm(1e6*err/(mz*z))', 'err(data-denovo)', 'pepMass(denovo)', 'z',
+            columns=['', 'RT', 'aaScore', 'ppm(1e6*err/(mz*z))', 'err(data-denovo)', 'pepMass(denovo)', 'z',
                      'mz(data)', 'scanNum'])
         temp_df['peptide'] = temp_df['peptide'].apply(lambda x: self.__cleanPeptideModifications(x))
-        self.result = pd.DataFrame({'ID': temp_df['id'], 'Predicted': temp_df['peptide']})
+        self.result = pd.DataFrame({'ID': temp_df['id'], 'Predicted': temp_df['peptide'], 'Score': temp_df['score']})
         return self.result
 
 

@@ -17,7 +17,7 @@ def readPeaksResult(file: str, actual_sequences: pd.DataFrame) -> pd.DataFrame:
     # merge expected and actual sequences for peaks
     merged_df = pd.merge(peaks_df, actual_sequences, left_on='Scan', right_on='Scan', how='inner')
     # score the sequences and write the result to a file
-    peaks_result = merged_df.query('Actual != \' \'')
+    peaks_result = merged_df  # .query('Actual != \' \'')
     return peaks_result
 
 
@@ -32,7 +32,7 @@ def readDirecTagResult(file: str, actual_sequences: pd.DataFrame) -> pd.DataFram
     # merge expected and actual sequences for direcTag
     merged_df = pd.merge(direcTag_df, actual_sequences, left_on='ID', right_index=True, how='inner')
     # score the sequences and write the result to a file
-    direcTag_result = merged_df.query('Actual != \' \'')
+    direcTag_result = merged_df  # .query('Actual != \' \'')
     return direcTag_result
 
 
@@ -42,7 +42,7 @@ def readNovorResult(file: str, actual_sequences: pd.DataFrame) -> pd.DataFrame:
     # merge expected and actual sequences for novor
     merged_df = pd.merge(novor_df, actual_sequences, left_on='ID', right_index=True, how='inner')
     # score the sequences and write the result to a file
-    novor_result = merged_df.query('Actual != \' \'')
+    novor_result = merged_df  # .query('Actual != \' \'')
     return novor_result
 
 
@@ -52,7 +52,7 @@ def readDeepNovoResult(file: str, actual_sequences: pd.DataFrame) -> pd.DataFram
     # merge expected and actual sequences for deepnovo
     merged_df = pd.merge(deepnovo_df, actual_sequences, left_on='Scan', right_on='Scan', how='inner')
     # score the sequences and write the result to a file
-    deepnovo_result = merged_df.query('Actual != \' \'')
+    deepnovo_result = merged_df  # .query('Actual != \' \'')
     return deepnovo_result
 
 
@@ -67,11 +67,17 @@ if __name__ == "__main__":
     for p in pools:
 
         # parse deepnovo result and save to file
-        DeepNovoParser(f"../Data/AlgorithmResults/{p[0]}/DeepNovo/decode_output.tab").parse().to_csv(f"../Data/ParsingResults/{p[0]}/deepnovo_results_raw.tsv", sep='\t', index=None)
-        PEAKSParser(f"../Data/AlgorithmResults/{p[0]}/PEAKS/Sample 1.denovo.csv").parse().to_csv(f"../Data/ParsingResults/{p[0]}/peaks_results_raw.tsv", sep='\t', index=None)
-        DirecTagParser(f"../Data/AlgorithmResults/{p[0]}/DirecTag/Run_1/01640c_{p[1]}-Thermo_SRM_{p[0]}_01_01-3xHCD-1h-R2.tags", 25).parse().to_csv(f"../Data/ParsingResults/{p[0]}/direcTag_results_raw.tsv", sep='\t', index=None)
-        NovorParser(f"../Data/AlgorithmResults/{p[0]}/Novor/Run_1/01640c_{p[1]}-Thermo_SRM_{p[0]}_01_01-3xHCD-1h-R2.novor.csv", 20).parse().to_csv(f"../Data/ParsingResults/{p[0]}/novor_results_raw.tsv", sep='\t', index=None)
-
+        if False:
+            DeepNovoParser(f"../Data/AlgorithmResults/{p[0]}/DeepNovo/decode_output.tab").parse().to_csv(
+                f"../Data/ParsingResults/{p[0]}/deepnovo_results_raw.tsv", sep='\t', index=None)
+            PEAKSParser(f"../Data/AlgorithmResults/{p[0]}/PEAKS/Sample 1.denovo.csv").parse().to_csv(
+                f"../Data/ParsingResults/{p[0]}/peaks_results_raw.tsv", sep='\t', index=None)
+            DirecTagParser(
+                f"../Data/AlgorithmResults/{p[0]}/DirecTag/Run_1/01640c_{p[1]}-Thermo_SRM_{p[0]}_01_01-3xHCD-1h-R2.tags",
+                25).parse().to_csv(f"../Data/ParsingResults/{p[0]}/direcTag_results_raw.tsv", sep='\t', index=None)
+            NovorParser(
+                f"../Data/AlgorithmResults/{p[0]}/Novor/Run_1/01640c_{p[1]}-Thermo_SRM_{p[0]}_01_01-3xHCD-1h-R2.novor.csv",
+                20).parse().to_csv(f"../Data/ParsingResults/{p[0]}/novor_results_raw.tsv", sep='\t', index=None)
 
         expected_pool = pd.read_csv(
             f"../Data/Datasets/{p[0]}/Thermo_SRM_{p[0]}_01_01_3xHCD-1h-R2-tryptic/msmsScans.txt",
@@ -79,28 +85,32 @@ if __name__ == "__main__":
         actualSequence_pool_df = pd.DataFrame(
             {'Scan': expected_pool['Scan number'], 'Actual': expected_pool['Sequence']})
 
-       # read peaks result
-        peaks_result = readPeaksResult(f"../Data/AlgorithmResults/{p[0]}/PEAKS/Sample 1.denovo.csv",
-                                       actualSequence_pool_df)
+        # read peaks result
+        # peaks_result = readPeaksResult(f"../Data/AlgorithmResults/{p[0]}/PEAKS/Sample 1.denovo.csv",actualSequence_pool_df)
         # write the result to a file
-        peaks_result.to_csv(f'../Data/ParsingResults/{p[0]}/peaks_results.tsv', sep='\t', index=None)
+        # peaks_result.query('Actual != \' \'').to_csv(f'../Data/ParsingResults/{p[0]}/peaks_results.tsv', sep='\t', index=None)
+        # peaks_result.to_csv(f'../Data/ParsingResults/{p[0]}/peaks_results_all_sequences.tsv', sep='\t', index=None)
 
         # read direcTag result
         direcTag_result = readDirecTagResult(
             f"../Data/AlgorithmResults/{p[0]}/DirecTag/Run_1/01640c_{p[1]}-Thermo_SRM_{p[0]}_01_01-3xHCD-1h-R2.tags",
             actualSequence_pool_df)
         # write the result to a file
-        direcTag_result.to_csv(f'../Data/ParsingResults/{p[0]}/direcTag_results.tsv', sep='\t', index=None)
+        direcTag_result.query('Actual != \' \'').to_csv(f'../Data/ParsingResults/{p[0]}/direcTag_results.tsv', sep='\t',
+                                                        index=None)
+        direcTag_result.to_csv(f'../Data/ParsingResults/{p[0]}/direcTag_results_all_sequences.tsv', sep='\t', index=None)
 
         # read novor result
-        novor_result = readNovorResult(
-            f"../Data/AlgorithmResults/{p[0]}/Novor/Run_1/01640c_{p[1]}-Thermo_SRM_{p[0]}_01_01-3xHCD-1h-R2.novor.csv",
-            actualSequence_pool_df)
+        # novor_result = readNovorResult(
+        #   f"../Data/AlgorithmResults/{p[0]}/Novor/Run_1/01640c_{p[1]}-Thermo_SRM_{p[0]}_01_01-3xHCD-1h-R2.novor.csv",
+        #  actualSequence_pool_df)
         # write the result to a file
-        novor_result.to_csv(f'../Data/ParsingResults/{p[0]}/novor_results.tsv', sep='\t', index=None)
+        # novor_result.query('Actual != \' \'').to_csv(f'../Data/ParsingResults/{p[0]}/novor_results.tsv', sep='\t', index=None)
+        # novor_result.to_csv(f'../Data/ParsingResults/{p[0]}/novor_results_all_sequences.tsv', sep='\t', index=None)
 
-       # read deepnovo result
-        deepnovo_result = readDeepNovoResult(f"../Data/AlgorithmResults/{p[0]}/DeepNovo/decode_output.tab",
-                                             actualSequence_pool_df)
+        # read deepnovo result
+        # deepnovo_result = readDeepNovoResult(f"../Data/AlgorithmResults/{p[0]}/DeepNovo/decode_output.tab",
+        #                                     actualSequence_pool_df)
         # write the result to a file
-        deepnovo_result.to_csv(f'../Data/ParsingResults/{p[0]}/deepnovo_results.tsv', sep='\t', index=None)
+        # deepnovo_result.query('Actual != \' \'').to_csv(f'../Data/ParsingResults/{p[0]}/deepnovo_results.tsv', sep='\t', index=None)
+        # deepnovo_result.to_csv(f'../Data/ParsingResults/{p[0]}/deepnovo_results_all_sequences.tsv', sep='\t', index=None)

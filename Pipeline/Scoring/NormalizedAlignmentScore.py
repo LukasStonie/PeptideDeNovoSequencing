@@ -35,5 +35,5 @@ if __name__ == "__main__":
     #print(alignment.getScore(predicted="GSHP", actual="VAMAMGSHPR"))
     alignment = NormalizedAlignmentScore(alignment_mode='local')
     print(alignment.getScore("ITHQGEVDSR", "LTHQEVDSR"))
-    #print(alignment.getScore(actual="VAMAMGSHPR", predicted="GSHL"))
+    print(alignment.getScore(actual="SHTGEKPYGCNECGK", predicted="MGWT"))
     #print(alignment.getScore(actual="VAMAMGSHPR", predicted="QWTY"))

@@ -8,7 +8,7 @@ class DeepNovoParser(AParser):
         Parameters:
         :param file: Path to the DeepNovo result file.
         """
-        self.file = file
+        super().__init__(file)
         self.result = None
 
     @staticmethod
@@ -28,10 +28,10 @@ class DeepNovoParser(AParser):
         """Parse the DeepNovo result file.
         :return: DataFrame containing the scan number and predicted sequence without modifications. """
         temp_df = pd.read_csv(self.file, sep='\t', header=0)
-        temp_df = temp_df.drop(columns=['exact_match', 'target_seq', 'output_score', 'accuracy_AA', 'len_AA'])
+        temp_df = temp_df.drop(columns=['exact_match', 'target_seq', 'accuracy_AA', 'len_AA'])
         temp_df = temp_df.query('output_seq.str.contains("inf")==False')
         temp_df['output_seq'] = temp_df['output_seq'].apply(lambda x: self.__cleanPeptideModifications(x))
-        self.result = pd.DataFrame({'Scan': temp_df['scan'], 'Predicted': temp_df['output_seq']})
+        self.result = pd.DataFrame({'Scan': temp_df['scan'], 'Predicted': temp_df['output_seq'], 'Score': temp_df['output_score']})
         return self.result
 
 

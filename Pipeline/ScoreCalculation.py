@@ -11,9 +11,11 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-RESULT_CLOUMNS = ['ID','Predicted', 'Actual', 'Similarity', 'Identity', 'Local Alignment', 'Global Alignment','Normalized Local Alignment', 'Normalized Global Alignment', 'Levenshtein']
+RESULT_CLOUMNS = ['ID', 'Predicted', 'Actual', 'Score', 'Similarity', 'Identity', 'Local Alignment', 'Global Alignment',
+                  'Normalized Local Alignment', 'Normalized Global Alignment', 'Levenshtein']
 
-def calculateScores(entry, alignment_mode:str = 'global') -> list:
+
+def calculateScores(entry, alignment_mode: str = 'global') -> list:
     """Calculate the similarity and identity of two sequences.
     Parameters:
     :param entry: DataFrame entry containing the predicted and actual sequence.
@@ -28,14 +30,15 @@ def calculateScores(entry, alignment_mode:str = 'global') -> list:
     levenshtein = LevenshteinDistance()
     return [
         entry['ID'] if 'ID' in entry else entry['Scan'],
-        entry['Predicted'], entry['Actual'],
+        entry['Predicted'], entry['Actual'], entry['Score'],
         similarity.getScore(predicted=entry['Predicted'], actual=entry['Actual']),
-        identiy.getScore(predicted=entry['Predicted'],actual= entry['Actual']),
-        localAlignmentScore.getScore(predicted=entry['Predicted'],actual= entry['Actual']),
-        globalAlignmentScore.getScore(predicted=entry['Predicted'],actual= entry['Actual']),
+        identiy.getScore(predicted=entry['Predicted'], actual=entry['Actual']),
+        localAlignmentScore.getScore(predicted=entry['Predicted'], actual=entry['Actual']),
+        globalAlignmentScore.getScore(predicted=entry['Predicted'], actual=entry['Actual']),
         normalizedLocalAlignmentScore.getScore(predicted=entry['Predicted'], actual=entry['Actual']),
         normalizedGlobalAlignmentScore.getScore(predicted=entry['Predicted'], actual=entry['Actual']),
-        levenshtein.getScore(predicted=entry['Predicted'],actual= entry['Actual'])]
+        levenshtein.getScore(predicted=entry['Predicted'], actual=entry['Actual'])]
+
 
 def calculateChunkIndex(len_df, num_cores):
     """Calculate the start and end indices for each chunk.
@@ -55,12 +58,15 @@ def calculateChunkIndex(len_df, num_cores):
         chunk_indices.append((start_index, end_index))
 
     return chunk_indices
-def calculateScoresOfChunk(subset_df, alignment_mode:str = 'global'):
+
+
+def calculateScoresOfChunk(subset_df, alignment_mode: str = 'global'):
     output = subset_df.apply(lambda x: calculateScores(x, alignment_mode), axis=1)
     output = pd.DataFrame(list(output), columns=RESULT_CLOUMNS)
     return output
 
-def processParsed(file:str):
+
+def processParsed(file: str, alignment_mode: str = 'global'):
     # read parsed result
     parsed_df = pd.read_csv(file, sep='\t', index_col=None, header=0)
 
@@ -71,35 +77,44 @@ def processParsed(file:str):
     # define parallel processing object with number of cpus
     parallel_direcTag = Parallel(n_jobs=cpus)
     # process the direcTag result in parallel
-    output = parallel_direcTag(delayed(calculateScoresOfChunk)(parsed_df.iloc[chunk[0]:chunk[1], :], 'local') for chunk in chunk_indices)
+    output = parallel_direcTag(
+        delayed(calculateScoresOfChunk)(parsed_df.iloc[chunk[0]:chunk[1], :], alignment_mode) for chunk in
+        chunk_indices)
     # concatenate the results
     output = pd.concat(output, axis=0)
     return output
 
+def groupByIdAndAverage(data:pd.DataFrame)->pd.DataFrame:
+    grouped = data.drop(columns=['Predicted', 'Actual']).groupby('ID').mean()
+    return grouped
+
+
 if __name__ == "__main__":
-    pools = ['Pool_49','Pool_52','Pool_60']
+    pools = ['Pool_49', 'Pool_52', 'Pool_60']
 
     for p in pools:
         print("Scoring ", p, " - PEAKS")
         # score peaks
-        peaks_scored_df = processParsed(f"../Data/ParsingResults/{p}/peaks_results.tsv")
+        #peaks_scored_df = processParsed(f"../Data/ParsingResults/{p}/peaks_results.tsv", alignment_mode='global')
         # save peaks scores
-        peaks_scored_df.to_csv(f"../Data/ScoringResults/{p}/peaks_scored.tsv", sep='\t', index=None)
+        #peaks_scored_df.to_csv(f"../Data/ScoringResults/{p}/peaks_scored.tsv", sep='\t', index=None)
 
         print("Scoring ", p, " - Novor")
         # score novor
-        novor_scored_df = processParsed(f"../Data/ParsingResults/{p}/novor_results.tsv")
+        #novor_scored_df = processParsed(f"../Data/ParsingResults/{p}/novor_results.tsv", alignment_mode='global')
         # save novor scores
-        novor_scored_df.to_csv(f"../Data/ScoringResults/{p}/novor_scored.tsv", sep='\t', index=None)
+        #novor_scored_df.to_csv(f"../Data/ScoringResults/{p}/novor_scored.tsv", sep='\t', index=None)
 
         print("Scoring ", p, " - DeepNovo")
         # score deepnovo
-        deepnovo_scored_df = processParsed(f"../Data/ParsingResults/{p}/deepnovo_results.tsv")
+        #deepnovo_scored_df = processParsed(f"../Data/ParsingResults/{p}/deepnovo_results.tsv", alignment_mode='local')
         # save deepnovo scores
-        deepnovo_scored_df.to_csv(f"../Data/ScoringResults/{p}/deepnovo_scored.tsv", sep='\t', index=None)
+        #deepnovo_scored_df.to_csv(f"../Data/ScoringResults/{p}/deepnovo_scored.tsv", sep='\t', index=None)
 
         print("Scoring ", p, " - DirecTag")
         # read directag
-        directag_scored_df = processParsed(f"../Data/ParsingResults/{p}/direcTag_results.tsv")
+        #directag_scored_df = processParsed(f"../Data/ParsingResults/{p}/direcTag_results.tsv", alignment_mode='global')
         # save directag scores
-        directag_scored_df.to_csv(f"../Data/ScoringResults/{p}/direcTag_scored.tsv", sep='\t', index=None)
+        #directag_scored_df.to_csv(f"../Data/ScoringResults/{p}/direcTag_scored.tsv", sep='\t', index=None)
+        # group by ID and average every column
+        # groupByIdAndAverage(directag_scored_df).to_csv(f"../Data/ScoringResults/{p}/direcTag_scored_grouped.tsv", sep='\t', index=None)

@@ -18,6 +18,6 @@ class LevenshteinDistance(AScore):
 
 if __name__ == "__main__":
     levenshtein = LevenshteinDistance()
-    print(levenshtein.getScore("ITHQGEVDSR", "LTHQEVDSR"))
+    print(levenshtein.getScore("ITHQEVDSR", "LTHQEVDSR"))
     print(levenshtein.getScore(actual="VAMAMGSHIR", predicted="GSHP"))
     print(levenshtein.getScore(predicted="GSHL", actual="VAMAMGSHIR"))

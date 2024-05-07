@@ -10,7 +10,7 @@ class DirecTagParser(AParser):
         :param file: Path to the DirecTag result file.
         :param skipNLines: Number of lines to skip at the beginning of the file. DirecTag files have a header that needs to be skipped.
         """
-        self.file = file
+        super().__init__(file)
         self.skipNLines = skipNLines
         self.modification_mapping = dict()
 
@@ -65,7 +65,7 @@ class DirecTagParser(AParser):
                 latestID = int(line.split('\t')[3])
             if line.startswith("T"):
                 tagline = line.split('\t')
-                entry = {'ID': latestID, 'Predicted': tagline[1], 'TotalScore': tagline[7],
+                entry = {'ID': latestID, 'Predicted': tagline[1], 'Score': tagline[7],
                          'ComplementScore': tagline[8], 'IntensityScore': tagline[9], 'mzFidelityScore': tagline[10]}
                 entries.append(entry)
         temp_df = pd.DataFrame(entries)

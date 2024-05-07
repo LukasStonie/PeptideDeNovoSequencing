@@ -4,12 +4,12 @@ from Bio.Align import substitution_matrices
 from Pipeline.Scoring.AScore import AScore
 
 class SequenceSimilarity(AScore):
-    def __init__(self, substitution_matrix:str = 'BLOSUM62', alignment_mode:str = 'global'):
+    def __init__(self, substitution_matrix:str = 'BLOSUM62', alignment_mode:str = 'global', open_gap_score:int = -2, extend_gap_score:int = -2):
         self.substitution_matrix = substitution_matrix
         self.aligner = PairwiseAligner()
         self.aligner.mode = alignment_mode
-        self.aligner.open_gap_score = -2
-        self.aligner.extend_gap_score = -2
+        self.aligner.open_gap_score = open_gap_score
+        self.aligner.extend_gap_score = extend_gap_score
         self.aligner.substitution_matrix = substitution_matrices.load(self.substitution_matrix)
     def getScore(self, predicted:str, actual:str)->float:
         """Calculate the percent similarity between two sequences.
@@ -39,5 +39,5 @@ if __name__ == "__main__":
     similarity = SequenceSimilarity()
     print(similarity.getScore("ITHQGEVDSR","LTHQEPVDSR"))
     similarity = SequenceSimilarity(alignment_mode='local')
-    print(similarity.getScore(actual="VAMAMGSHIR", predicted="GSHP"))
+    print(similarity.getScore(actual="AFPSPQTLLEDPLR", predicted="PEKD"))
     print(similarity.getScore(predicted="GSHL", actual="VAMAMGSHIR"))
