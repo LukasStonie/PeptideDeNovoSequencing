@@ -4,12 +4,12 @@ from Bio.Align import substitution_matrices
 from Pipeline.Scoring.AScore import AScore
 
 class SequenceIdentity(AScore):
-    def __init__(self, substitution_matrix:str = 'PAM250', alignment_mode:str = 'global'):
+    def __init__(self, substitution_matrix:str = 'BLOSUM62', alignment_mode:str = 'global', open_gap_score:int = -2, extend_gap_score:int = -2):
         self.substitution_matrix = substitution_matrix
         self.aligner = PairwiseAligner()
         self.aligner.mode = alignment_mode
-        self.aligner.open_gap_score = -10
-        self.aligner.extend_gap_score = -0.5
+        self.aligner.open_gap_score = open_gap_score
+        self.aligner.extend_gap_score = extend_gap_score
         self.aligner.substitution_matrix = substitution_matrices.load(self.substitution_matrix)
     def getScore(self, predicted:str, actual:str)->float:
         """Calculate the percent identity between two sequences.
@@ -37,7 +37,7 @@ class SequenceIdentity(AScore):
 
 if __name__ == "__main__":
     identity = SequenceIdentity()
-    print(identity.getScore("ITHQGEVDSR", "LTHQEVDSR"))
+    print(identity.getScore(predicted="FELATVTEK", actual="FQIATVTEK"))
     identity = SequenceIdentity(alignment_mode='local')
-    print(identity.getScore(actual="VAMAMGSHPR", predicted="GSHP"))
+    print(identity.getScore(actual="LEESLATTETFK", predicted="LQESLATTETFK"))
     print(identity.getScore(predicted="GSHT", actual="VAMAMGSHPR"))

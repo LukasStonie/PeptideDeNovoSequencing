@@ -4,12 +4,12 @@ from Pipeline.Scoring.AScore import AScore
 
 
 class AlignmentScore(AScore):
-    def __init__(self, substitution_matrix:str = 'BLOSUM62', alignment_mode:str = 'global'):
+    def __init__(self, substitution_matrix:str = 'BLOSUM62', alignment_mode:str = 'global', open_gap_score:int = -2, extend_gap_score:int = -2):
         self.substitution_matrix = substitution_matrix
         self.aligner = PairwiseAligner()
         self.aligner.mode = alignment_mode
-        self.aligner.open_gap_score = -2
-        self.aligner.extend_gap_score = -2
+        self.aligner.open_gap_score = open_gap_score
+        self.aligner.extend_gap_score = extend_gap_score
         self.aligner.substitution_matrix = substitution_matrices.load(self.substitution_matrix)
 
     def getScore(self, predicted: str, actual: str) -> float:

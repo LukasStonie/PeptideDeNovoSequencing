@@ -3,12 +3,12 @@ from Bio.Align import substitution_matrices, PairwiseAligner
 from Pipeline.Scoring.AScore import AScore
 
 class NormalizedAlignmentScore(AScore):
-    def __init__(self, substitution_matrix:str = 'BLOSUM62', alignment_mode:str = 'global'):
+    def __init__(self, substitution_matrix:str = 'BLOSUM62', alignment_mode:str = 'global', open_gap_score:int = -2, extend_gap_score:int = -2):
         self.substitution_matrix = substitution_matrix
         self.aligner = PairwiseAligner()
         self.aligner.mode = alignment_mode
-        self.aligner.open_gap_score = -2
-        self.aligner.extend_gap_score = -2
+        self.aligner.open_gap_score = open_gap_score
+        self.aligner.extend_gap_score = extend_gap_score
         self.aligner.substitution_matrix = substitution_matrices.load(self.substitution_matrix)
 
     def getScore(self, predicted: str, actual: str) -> float:
@@ -26,14 +26,14 @@ class NormalizedAlignmentScore(AScore):
         # get the first (best) alignment
         alignment = alignments[0]
         # return the alignment score
-        return alignment.score / (len(alignment[0,:]) if self.aligner.mode == 'global' else len(predicted))
+        return alignment.score / len(alignment[0,:]) #if self.aligner.mode == 'global' else len(predicted))
 
 
 if __name__ == "__main__":
     alignment = NormalizedAlignmentScore()
-    print(alignment.getScore("ITHQGEVDSR", "LTHQEVDSR"))
+    print(alignment.getScore("ITHQGEVDSR", "ITHQGEVDSR"))
     #print(alignment.getScore(predicted="GSHP", actual="VAMAMGSHPR"))
-    alignment = NormalizedAlignmentScore(alignment_mode='local')
-    print(alignment.getScore("ITHQGEVDSR", "LTHQEVDSR"))
-    print(alignment.getScore(actual="SHTGEKPYGCNECGK", predicted="MGWT"))
+    alignment = NormalizedAlignmentScore(alignment_mode='local', open_gap_score=-10, extend_gap_score=-10)
+    print(alignment.getScore(actual="DHPESYHSFMWNNFFK", predicted="PESK"))
+    print(alignment.getScore(actual="DHPESYHSFMWNNFFK", predicted="DEFK"))
     #print(alignment.getScore(actual="VAMAMGSHPR", predicted="QWTY"))

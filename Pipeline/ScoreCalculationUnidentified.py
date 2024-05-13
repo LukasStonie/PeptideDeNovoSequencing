@@ -11,38 +11,37 @@ from Pipeline.Scoring.SequenceSimilarity import SequenceSimilarity
 
 warnings.filterwarnings("ignore")
 
-RESULT_CLOUMNS = ['ID', 'Predicted', 'Inclusion', 'Score', 'Similarity', 'Identity', 'Local Alignment', 'Global Alignment',
+RESULT_CLOUMNS = ['ID', 'Predicted', 'Inclusion', 'Score', 'Similarity', 'Identity', 'Local Alignment',
+                  'Global Alignment',
                   'Normalized Local Alignment', 'Normalized Global Alignment', 'Levenshtein']
 
 
-def best_match(s, candidates, alignment_mode='global'):
+def best_match(s, candidates, alignment_mode='global', gap_open=-2, gap_ext=-2):
     ''' Return the item in candidates that best matches s.
 
     Will return None if a good enough match is not found.
     '''
-    if alignment_mode == 'local':
-        similarity = SequenceSimilarity(alignment_mode=alignment_mode, open_gap_score=-4, extend_gap_score=-4)
-    else:
-        similarity = SequenceSimilarity(alignment_mode=alignment_mode, open_gap_score=-2, extend_gap_score=-2)
+
+    similarity = SequenceSimilarity(alignment_mode=alignment_mode, open_gap_score=gap_open, extend_gap_score=gap_ext)
     for candidate in candidates:
         if similarity.getScore(predicted=s, actual=candidate) == 1.0:
             return [s, candidate]
     return [s, None]
 
 
-def best_match_parallel(s_df, candidates, alignment_mode='global'):
-    output = s_df.apply(lambda x: best_match(x['Predicted'], candidates, alignment_mode), axis=1)
+def best_match_parallel(s_df, candidates, alignment_mode='global', gap_open=-2, gap_ext=-2):
+    output = s_df.apply(lambda x: best_match(x['Predicted'], candidates, alignment_mode, gap_open, gap_ext), axis=1)
     output = pd.DataFrame(list(output), columns=['Predicted', 'Inclusion'])
     return output
 
 
-def calculateScores(entry, alignment_mode: str = 'global') -> list:
-    identiy = SequenceIdentity(alignment_mode=alignment_mode)
-    similarity = SequenceSimilarity(alignment_mode=alignment_mode)
-    localAlignmentScore = AlignmentScore(alignment_mode='local')
-    globalAlignmentScore = AlignmentScore(alignment_mode='global')
-    normalizedLocalAlignmentScore = NormalizedAlignmentScore(alignment_mode='local')
-    normalizedGlobalAlignmentScore = NormalizedAlignmentScore(alignment_mode='global')
+def calculateScores(entry, alignment_mode: str = 'global', gap_open=-2, gap_ext=-2) -> list:
+    identiy = SequenceIdentity(alignment_mode=alignment_mode, open_gap_score=gap_open, extend_gap_score=gap_ext)
+    similarity = SequenceSimilarity(alignment_mode=alignment_mode, open_gap_score=gap_open, extend_gap_score=gap_ext)
+    localAlignmentScore = AlignmentScore(alignment_mode='local', open_gap_score=gap_open, extend_gap_score=gap_ext)
+    globalAlignmentScore = AlignmentScore(alignment_mode='global', open_gap_score=gap_open, extend_gap_score=gap_ext)
+    normalizedLocalAlignmentScore = NormalizedAlignmentScore(alignment_mode='local', open_gap_score=gap_open, extend_gap_score=gap_ext)
+    normalizedGlobalAlignmentScore = NormalizedAlignmentScore(alignment_mode='global', open_gap_score=gap_open, extend_gap_score=gap_ext)
     levenshtein = LevenshteinDistance()
     return [
         entry['ID'] if 'ID' in entry else entry['Scan'],
@@ -76,13 +75,13 @@ def calculateChunkIndex(len_df, num_cores):
     return chunk_indices
 
 
-def calculateScoresOfChunk(subset_df, alignment_mode: str = 'global'):
-    output = subset_df.apply(lambda x: calculateScores(x, alignment_mode), axis=1)
+def calculateScoresOfChunk(subset_df, alignment_mode: str = 'global', gap_open=-2, gap_ext=-2):
+    output = subset_df.apply(lambda x: calculateScores(x, alignment_mode, gap_open, gap_ext), axis=1)
     output = pd.DataFrame(list(output), columns=RESULT_CLOUMNS)
     return output
 
 
-def findPerfectSimilarityMatchInclusionList(file: str, pool: str, algorithm: str, alignment_mode: str = 'global'):
+def findPerfectSimilarityMatchInclusionList(file: str, pool: str, algorithm: str, alignment_mode: str = 'global', gap_open=-2, gap_ext=-2):
     # read parsed result
     parsed_df = pd.read_csv(file, sep='\t', index_col=None, header=0).query('Actual == \' \'')
     # get unique predicted sequences and create a DataFrame
@@ -105,7 +104,7 @@ def findPerfectSimilarityMatchInclusionList(file: str, pool: str, algorithm: str
     # process the unique predictions in parallel
     output = parallel_similarity_overlap(
         delayed(best_match_parallel)(unique_predicted_df.iloc[chunk[0]:chunk[1], :],
-                                     inclusion_list['Sequence'].to_list(), alignment_mode) for chunk in
+                                     inclusion_list['Sequence'].to_list(), alignment_mode, gap_open, gap_ext) for chunk in
         chunk_indices_similarity_overlap)
     # concatenate the results
     output = pd.concat(output, axis=0)
@@ -114,32 +113,65 @@ def findPerfectSimilarityMatchInclusionList(file: str, pool: str, algorithm: str
                   sep='\t', index=None)
 
 
-def processParsed(file: str, pool: str, algorithm: str, alignment_mode: str = 'global'):
+def processParsed(file: str, pool: str, algorithm: str, alignment_mode: str = 'global', gap_open=-2, gap_ext=-2):
     # read parsed result
-    parsed_df = pd.read_csv(file, sep='\t', index_col=None, header=0).query('Actual == \' \'')
+    parsed_df = pd.read_csv(file, sep='\t', index_col=None, header=0).query('Actual == \' \'').drop(columns=['Actual'])
+
     print(parsed_df.shape[0])
     # read the inclusion list
     sim_100_matches = pd.read_csv(
-        f"../Data/ScoringResults_Unidentified/CheckInclusionList/Overlap_Similarity_100/{pool}_{algorithm}_similarity_100_match.tsv",
+        f"../Data/ScoringResults_Unidentified/CheckInclusionList/{pool}_{algorithm}_similarity_100_match.tsv",
         sep='\t', index_col=None, header=0)
     # reduce dfs to necessary colmns
 
-    merged_df = parsed_df.merge(sim_100_matches, left_on='Predicted', right_on='Predicted', how='left').dropna().drop(columns=['Actual'])
-    print(merged_df.shape[0])
-    print(merged_df.columns)
+    merged_sim_df = parsed_df.merge(sim_100_matches, left_on='Predicted', right_on='Predicted', how='left').dropna()
+    print(merged_sim_df.shape[0])
+    print(merged_sim_df.columns)
+
+    # read the inclusion list
+    inclusion_list = pd.read_csv(f"../Data/Datasets/{pool}/Thermo_SRM_{pool}_01_01_3xHCD-1h-R2-tryptic/peptides.txt",
+                                 sep='\t', index_col=None, header=0)
+    inclusion_list = inclusion_list[['Sequence']]
+    inclusion_list.columns = ['Inclusion']
+    inclusion_list['Predicted'] = inclusion_list['Inclusion']
+
+    if algorithm != 'direcTag':
+        merged_id_df = parsed_df.merge(inclusion_list, left_on='Predicted', right_on='Predicted', how='left').dropna()
+    else:
+        merged_id_df = (inclusion_list.assign(
+            temp=inclusion_list['Predicted'].str.extract(pat=f"({'|'.join(parsed_df['Predicted'])})"))
+            .merge(
+                parsed_df,
+                how='left',
+                left_on='temp',
+                right_on='Predicted',
+                suffixes=['', '_y'])
+        ).rename(columns={'id_y': 'matched_id'}).drop(columns=['temp', 'Predicted_y']).dropna()
+        merged_id_df['ID'] = merged_id_df['ID'].astype(int)
+        merged_id_df['Scan'] = merged_id_df['Scan'].astype(int)
+    print("merged identity:", merged_id_df.shape[0])
+
+    df_list = [merged_sim_df, merged_id_df]
+    # merge the df and drop duplicates by id
+    scanID = 'Scan' if 'Scan' in parsed_df.columns else 'ID'
+    merged_final_df = pd.concat(df_list, axis=0).drop_duplicates(subset=scanID)
 
     # define number of cpus and calculate chunk indices for parallel processing
     cpus = 6  # os.cpu_count()
-    chunk_indices = calculateChunkIndex(len(merged_df), cpus)
+    chunk_indices = calculateChunkIndex(len(merged_final_df), cpus)
 
     # define parallel processing object with number of cpus
     parallel_direcTag = Parallel(n_jobs=cpus)
     # process the direcTag result in parallel
-    output = parallel_direcTag(delayed(calculateScoresOfChunk)(merged_df.iloc[chunk[0]:chunk[1], :], alignment_mode) for chunk in chunk_indices)
+    output = parallel_direcTag(delayed(calculateScoresOfChunk)(merged_final_df.iloc[chunk[0]:chunk[1], :], alignment_mode, gap_open, gap_ext) for chunk in chunk_indices)
     # concatenate the results
     output = pd.concat(output, axis=0)
+    output.rename(columns={'Inclusion': 'Actual'}, inplace=True)
     return output
 
+def groupByIdAndAverage(data:pd.DataFrame)->pd.DataFrame:
+    grouped = data.drop(columns=['Predicted', 'Actual']).groupby('ID').mean()
+    return grouped
 
 if __name__ == "__main__":
     pools = ['Pool_49', 'Pool_52', 'Pool_60']
@@ -148,42 +180,42 @@ if __name__ == "__main__":
     if False:
         for p in pools:
             print("Finding Matches: ", p, " - PEAKS")
-            findPerfectSimilarityMatchInclusionList(f"../Data/ParsingResults/{p}/peaks_results_all_sequences.tsv", p,
-                                                    'peaks', alignment_mode='global')
+            #findPerfectSimilarityMatchInclusionList(f"../Data/ParsingResults/{p}/peaks_results_all_sequences.tsv", p,'peaks', alignment_mode='global')
 
             print("Finding Matches: ", p, " - Novor")
-            findPerfectSimilarityMatchInclusionList(f"../Data/ParsingResults/{p}/novor_results_all_sequences.tsv", p,
-                                                    'novor', alignment_mode='global')
+            #findPerfectSimilarityMatchInclusionList(f"../Data/ParsingResults/{p}/novor_results_all_sequences.tsv", p,'novor', alignment_mode='global')
 
             print("Finding Matches: ", p, " - DirecTag")
             findPerfectSimilarityMatchInclusionList(f"../Data/ParsingResults/{p}/direcTag_results_all_sequences.tsv", p,
-                                                    'direcTag', alignment_mode='local')
+                                                    'direcTag', alignment_mode='local', gap_open=-10, gap_ext=-10)
 
             print("Finding Matches: ", p, " - DeepNovo")
-            findPerfectSimilarityMatchInclusionList(f"../Data/ParsingResults/{p}/deepnovo_results_all_sequences.tsv", p,
-                                                    'deepnovo', alignment_mode='local')
+            #findPerfectSimilarityMatchInclusionList(f"../Data/ParsingResults/{p}/deepnovo_results_all_sequences.tsv", p,'deepnovo', alignment_mode='global')
+    if True:
+        for p in pools:
+            print("Scoring ", p, " - PEAKS")
+            # score peaks
+            #peaks_scored_df = processParsed(f"../Data/ParsingResults/{p}/peaks_results_all_sequences.tsv", p, 'peaks', alignment_mode='global')
+            # save peaks scores
+            #peaks_scored_df.to_csv(f"../Data/ScoringResults_Unidentified/CheckInclusionList/{p}/peaks_scored.tsv", sep='\t', index=None)
 
-    for p in pools:
-        print("Scoring ", p, " - PEAKS")
-        # score peaks
-        peaks_scored_df = processParsed(f"../Data/ParsingResults/{p}/peaks_results_all_sequences.tsv", p, 'peaks',alignment_mode='global')
-        # save peaks scores
-        peaks_scored_df.to_csv(f"../Data/ScoringResults_Unidentified/CheckInclusionList/{p}/peaks_scored.tsv", sep='\t', index=None)
+            print("Scoring ", p, " - Novor")
+            # score novor
+            #novor_scored_df = processParsed(f"../Data/ParsingResults/{p}/novor_results_all_sequences.tsv", p, 'novor', alignment_mode='global')
+            # save novor scores
+            #novor_scored_df.to_csv(f"../Data/ScoringResults_Unidentified/CheckInclusionList/{p}/novor_scored.tsv", sep='\t',index=None)
 
-        print("Scoring ", p, " - Novor")
-        # score novor
-        novor_scored_df = processParsed(f"../Data/ParsingResults/{p}/novor_results_all_sequences.tsv",p, 'novor', alignment_mode='global')
-        # save novor scores
-        novor_scored_df.to_csv(f"../Data/ScoringResults_Unidentified/CheckInclusionList/{p}/novor_scored.tsv", sep='\t',index=None)
+            print("Scoring ", p, " - DeepNovo")
+            # score deepnovo
+            #deepnovo_scored_df = processParsed(f"../Data/ParsingResults/{p}/deepnovo_results_all_sequences.tsv", p,'deepnovo', alignment_mode='global')
+            # save deepnovo scores
+            #deepnovo_scored_df.to_csv(f"../Data/ScoringResults_Unidentified/CheckInclusionList/{p}/deepnovo_scored.tsv", sep='\t', index=None)
 
-        print("Scoring ", p, " - DeepNovo")
-        # score deepnovo
-        #deepnovo_scored_df = processParsed(f"../Data/ParsingResults/{p}/deepnovo_results_all_sequences.tsv",p,'deepnovo', alignment_mode='local')
-        # save deepnovo scores
-        #deepnovo_scored_df.to_csv(f"../Data/ScoringResults_Unidentified/CheckInclusionList/{p}/deepnovo_scored.tsv", sep='\t', index=None)
-
-        print("Scoring ", p, " - DirecTag")
-        # read directag
-        #directag_scored_df = processParsed(f"../Data/ParsingResults/{p}/direcTag_results_all_sequences.tsv",p,'direcTag', alignment_mode='local')
-        # save directag scores
-        #directag_scored_df.to_csv(f"../Data/ScoringResults_Unidentified/CheckInclusionList/{p}/direcTag_scored.tsv", sep='\t', index=None)
+            print("Scoring ", p, " - DirecTag")
+            # read directag
+            directag_scored_df = processParsed(f"../Data/ParsingResults/{p}/direcTag_results_all_sequences.tsv", p,
+                                               'direcTag', alignment_mode='local', gap_open=-10, gap_ext=-10)
+            # save directag scores
+            directag_scored_df.to_csv(f"../Data/ScoringResults_Unidentified/CheckInclusionList/{p}/direcTag_scored.tsv", sep='\t', index=None)
+            groupByIdAndAverage(directag_scored_df).to_csv(f"../Data/ScoringResults_Unidentified/CheckInclusionList/{p}/direcTag_scored_grouped.tsv",
+                                                           sep='\t', index=None)

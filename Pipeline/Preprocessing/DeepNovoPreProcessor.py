@@ -1,5 +1,7 @@
 from typing import Tuple, List
 
+import pandas as pd
+
 
 class MGFEntry:
     def __init__(self, sequence:str):
@@ -32,6 +34,19 @@ class MGFEntry:
     def addPeak(self, peak:Tuple[float, float]):
         self.peaks.append(peak)
 
+    def getScan(self):
+        return self.scan
+
+    def getPeakCount(self):
+        return len(self.peaks)
+
+    def getPepMass(self):
+        return self.pepmass
+
+    def getCharge(self):
+        return self.charge
+
+
     def __str__(self):
         peaks = '\n'.join([f"{peak[0]} {peak[1]}" for peak in self.peaks])
         return f"BEGIN IONS\nTITLE={self.title}\nPEPMASS={self.pepmass}\nCHARGE={self.charge}+\nSCANS={self.scan}\nRTINSECONDS={self.rtinseconds}\nSEQ={self.sequence}\n{peaks}\nEND IONS\n"
@@ -44,6 +59,7 @@ class DeepNovoPreProcessor:
     def process(self, source:str):
         entries = self.__parse(source)
         self.__write(entries)
+        self.__savePeakDistribution(entries)
 
     def __parse(self, source:str)->List[MGFEntry]:
         lines = list()
@@ -76,6 +92,24 @@ class DeepNovoPreProcessor:
             for entry in entries:
                 file.write(str(entry))
 
+    def __savePeakDistribution(self, entries):
+        mass_H = 1.0078
+        scan_id = []
+        peak_count = []
+        pepmass = []
+        prec_mass = []
+        for entry in entries:
+            scan_id.append(entry.getScan())
+            peak_count.append(entry.getPeakCount())
+            pepmass.append(entry.getPepMass()*entry.getCharge() - entry.getCharge()*mass_H)
+            prec_mass.append(entry.getPepMass())
+        peak_distribution_df = pd.DataFrame({'Scan': scan_id, 'PeakCount': peak_count})
+        pepmass_distribution_df = pd.DataFrame({'Scan': scan_id, 'PepMass': pepmass})
+        precursormass_distribution_df = pd.DataFrame({'Scan': scan_id, 'PrecursorMass': prec_mass})
+        file = self.destination.split('/')[-1]
+        peak_distribution_df.to_csv(self.destination.replace(file, "mgf_peaks_distribution.tsv"), sep='\t', index=None)
+        pepmass_distribution_df.to_csv(self.destination.replace(file, "mgf_pepmass_distribution.tsv"), sep='\t', index=None)
+        precursormass_distribution_df.to_csv(self.destination.replace(file, "mgf_precursormass_distribution.tsv"), sep='\t', index=None)
 
 if __name__ == "__main__":
     files = ['Pool_49/01640c_BA7-Thermo_SRM_Pool_49_01_01-3xHCD-1h-R2', 'Pool_52/01640c_BD7-Thermo_SRM_Pool_52_01_01-3xHCD-1h-R2','Pool_60/01640c_BD8-Thermo_SRM_Pool_60_01_01-3xHCD-1h-R2']

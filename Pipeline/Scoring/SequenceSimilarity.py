@@ -37,7 +37,7 @@ class SequenceSimilarity(AScore):
 
 if __name__ == "__main__":
     similarity = SequenceSimilarity()
-    print(similarity.getScore("ITHQGEVDSR","LTHQEPVDSR"))
-    similarity = SequenceSimilarity(alignment_mode='local')
+    print(similarity.getScore(predicted="FELATVTEK",actual="FQIATVTEK"))
+    similarity = SequenceSimilarity(alignment_mode='local', open_gap_score=-10, extend_gap_score=-10)
     print(similarity.getScore(actual="AFPSPQTLLEDPLR", predicted="PEKD"))
-    print(similarity.getScore(predicted="PYGC", actual="SHTGEKPYGCNECGK"))
+    print(similarity.getScore(predicted="PPCV", actual="GAPPCPSR"))
