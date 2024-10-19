@@ -25,7 +25,7 @@ class SequenceIdentity(AScore):
             return 0.0
         # get the first (best) alignment
         alignment = alignments[0]
-
+        print(alignment)
         # calculate the number of identical positions
         identical_positions = sum(a==b for a,b in zip(alignment[0,:], alignment[1,:]))
 
@@ -38,6 +38,6 @@ class SequenceIdentity(AScore):
 if __name__ == "__main__":
     identity = SequenceIdentity()
     print(identity.getScore(predicted="FELATVTEK", actual="FQIATVTEK"))
-    identity = SequenceIdentity(alignment_mode='local')
-    print(identity.getScore(actual="LEESLATTETFK", predicted="LQESLATTETFK"))
+    identity = SequenceIdentity(alignment_mode='local', open_gap_score=-10, extend_gap_score=-10)
+    print(identity.getScore(actual="LEESLATTETFK", predicted="EEST"))
     print(identity.getScore(predicted="GSHT", actual="VAMAMGSHPR"))
